@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundWave - AI Müzik & Yerel Dosya Platformu</title>
+    <style>
+        :root {
+            --bg-color: #0d0d11;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-color: #ffffff;
+            --subtext-color: #aaa;
+            --header-bg: rgba(255, 255, 255, 0.05);
+            --modal-bg: rgba(25, 25, 35, 0.95);
+            --apple-accent: #ff2d55;
+        }
+
+        body.light-theme {
+            --bg-color: #f4f4f7;
+            --card-bg: rgba(255, 255, 255, 0.7);
+            --card-border: rgba(0, 0, 0, 0.08);
+            --text-color: #1c1c1e;
+            --subtext-color: #666;
+            --header-bg: rgba(255, 255, 255, 0.8);
+            --modal-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        body {
+            background-color: var(--bg-color); color: var(--text-color);
+            min-height: 100vh; overflow-x: hidden; padding-bottom: 110px;
+        }
+
+        .background-glow {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; pointer-events: none;
+        }
+
+        .glow-1 {
+            position: absolute; top: -100px; left: -100px; width: 450px; height: 450px;
+            background: radial-gradient(circle, rgba(255, 45, 85, 0.22) 0%, rgba(0,0,0,0) 70%); border-radius: 50%;
+        }
+
+        .glow-2 {
+            position: absolute; bottom: -100px; right: -100px; width: 550px; height: 550px;
+            background: radial-gradient(circle, rgba(175, 82, 222, 0.22) 0%, rgba(0,0,0,0) 70%); border-radius: 50%;
+        }
+
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 30px; background: var(--header-bg);
+            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+            border-bottom: 1px solid var(--card-border); position: sticky; top: 0; z-index: 100;
+        }
+
+        .logo { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 22px; cursor: pointer; }
+        .logo-icon {
+            width: 42px; height: 42px; background: linear-gradient(135deg, #ff2d55, #af52de, #5856d6);
+            border-radius: 14px; display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 0 20px rgba(255, 45, 85, 0.5);
+        }
+
+        .search-container { flex: 1; max-width: 450px; margin: 0 20px; }
+        .search-box {
+            width: 100%; background: rgba(150, 150, 150, 0.12); border: 1px solid var(--card-border);
+            border-radius: 22px; padding: 10px 20px; color: var(--text-color); font-size: 14px; outline: none;
+        }
+        .search-box:focus { border-color: var(--apple-accent); }
+
+        .nav-buttons { display: flex; align-items: center; gap: 10px; }
+        .btn {
+            background: rgba(150, 150, 150, 0.15); color: var(--text-color);
+            border: 1px solid var(--card-border); padding: 8px 16px; border-radius: 18px; cursor: pointer; font-size: 13px; font-weight: 500;
+        }
+        .btn:hover { background: rgba(150, 150, 150, 0.25); }
+
+        .btn-primary { background: linear-gradient(135deg, #ff2d55, #af52de); color: white; border: none; box-shadow: 0 4px 12px rgba(255, 45, 85, 0.3); }
+        .btn-live { background: #ff2d55; color: white; border: none; animation: pulse 1.5s infinite; }
+        .btn-ai {
+            background: linear-gradient(135deg, #5856d6, #5ac8fa); color: white; border: none;
+            box-shadow: 0 4px 12px rgba(90, 200, 250, 0.3); font-weight: 600;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 45, 85, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 45, 85, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 45, 85, 0); }
+        }
+
+        .btn-google {
+            background: #ffffff; color: #333; border: none; display: flex; align-items: center; justify-content: center;
+            gap: 10px; font-weight: 600; margin-bottom: 15px; width: 100%; padding: 10px; border-radius: 12px; cursor: pointer;
+        }
+
+        .user-profile { display: none; align-items: center; gap: 10px; }
+        .user-name { font-weight: 600; color: #ff2d55; }
+
+        .categories-bar {
+            display: flex; gap: 10px; padding: 15px 30px 5px 30px; max-width: 1200px; margin: 0 auto; overflow-x: auto; scrollbar-width: none;
+        }
+        .categories-bar::-webkit-scrollbar { display: none; }
+        .chip {
+            background: rgba(150, 150, 150, 0.1); border: 1px solid var(--card-border);
+            padding: 8px 18px; border-radius: 20px; font-size: 13px; cursor: pointer; white-space: nowrap;
+        }
+        .chip:hover, .chip.active { background: linear-gradient(135deg, #ff2d55, #af52de); color: white; border-color: transparent; }
+
+        main { padding: 20px 30px 40px 30px; max-width: 1200px; margin: 0 auto; }
+        h1 { font-size: 22px; margin-bottom: 20px; font-weight: 600; }
+
+        .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 25px; }
+        .video-card {
+            background: var(--card-bg); border-radius: 16px; overflow: hidden;
+            border: 1px solid var(--card-border); cursor: pointer; position: relative;
+        }
+        .video-card:hover { transform: translateY(-5px); }
+        .thumbnail { width: 100%; height: 160px; background-size: cover; background-position: center; position: relative; }
+        .live-badge { position: absolute; top: 10px; left: 10px; background: #ff2d55; color: white; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 12px; }
+        .ai-badge { position: absolute; top: 10px; left: 10px; background: linear-gradient(135deg, #5856d6, #5ac8fa); color: white; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 12px; }
+        .local-badge { position: absolute; top: 10px; left: 10px; background: #34c759; color: white; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 12px; }
+        
+        .play-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3);
+            display: flex; justify-content: center; align-items: center; opacity: 0; color: white; transition: 0.3s;
+        }
+        .video-card:hover .play-overlay { opacity: 1; }
+        .video-info { padding: 15px; }
+        .video-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+        .video-author { font-size: 13px; color: var(--subtext-color); }
+
+        /* APPLE MUSIC STYLE PLAYER */
+        .apple-music-player {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 90px;
+            background: rgba(20, 20, 28, 0.82); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            border-top: 1px solid rgba(255, 255, 255, 0.12); display: flex; align-items: center; justify-content: space-between;
+            padding: 0 35px; z-index: 150; box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.5);
+        }
+        body.light-theme .apple-music-player { background: rgba(255, 255, 255, 0.85); border-top: 1px solid rgba(0, 0, 0, 0.08); }
+
+        .apple-track-info { display: flex; align-items: center; gap: 16px; width: 28%; }
+        .apple-thumb { width: 56px; height: 56px; border-radius: 12px; background-size: cover; background-position: center; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        .apple-details h4 { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+        .apple-details p { font-size: 13px; color: var(--subtext-color); margin-top: 2px; }
+
+        .apple-controls { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 44%; max-width: 580px; }
+        .apple-btn-group { display: flex; align-items: center; gap: 24px; }
+        .apple-icon-btn { background: none; border: none; color: var(--text-color); font-size: 18px; cursor: pointer; opacity: 0.75; }
+        .apple-play-btn {
+            background: var(--text-color); color: var(--bg-color); border: none; width: 40px; height: 40px;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 16px; cursor: pointer;
+        }
+        .apple-progress-wrapper { display: flex; align-items: center; gap: 12px; width: 100%; }
+        .apple-time { font-size: 11px; font-weight: 500; color: var(--subtext-color); width: 35px; text-align: center; }
+        .apple-slider {
+            flex: 1; height: 4px; border-radius: 2px; background: rgba(150, 150, 150, 0.25); appearance: none; outline: none; cursor: pointer;
+        }
+        .apple-slider::-webkit-slider-thumb { appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--text-color); }
+        .apple-right-panel { display: flex; align-items: center; justify-content: flex-end; gap: 12px; width: 28%; }
+        .apple-volume-slider { width: 90px; }
+
+        /* Profil / Şarkı Listesi */
+        .my-songs-list { display: flex; flex-direction: column; gap: 12px; margin-top: 15px; max-height: 250px; overflow-y: auto; }
+        .my-song-item {
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(150, 150, 150, 0.08); padding: 10px 14px; border-radius: 12px; border: 1px solid var(--card-border);
+        }
+        .my-song-info { display: flex; align-items: center; gap: 12px; }
+        .my-song-img { width: 40px; height: 40px; border-radius: 8px; background-size: cover; }
+        .delete-btn { background: rgba(255, 45, 85, 0.2); color: #ff2d55; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+        .delete-btn:hover { background: #ff2d55; color: white; }
+
+        /* Modallar */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(15px); z-index: 200; justify-content: center; align-items: center; overflow-y: auto;
+        }
+        .modal-content {
+            background: var(--modal-bg); border-radius: 20px; padding: 25px; width: 90%; max-width: 500px; border: 1px solid var(--card-border); position: relative; margin: 20px 0;
+        }
+        .modal-live-content { max-width: 950px; display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .modal-live-content { grid-template-columns: 1fr; } }
+
+        .live-chat-box { background: rgba(0,0,0,0.3); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; height: 350px; }
+        .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+        .chat-msg { background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 8px; }
+        .chat-user { font-weight: 600; color: #ff2d55; }
+        .chat-input-area { display: flex; gap: 6px; margin-top: 10px; }
+        .chat-input-area input { flex: 1; padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid var(--card-border); color: white; outline: none; }
+
+        .close-btn { position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: var(--subtext-color); }
+        .captcha-box {
+            display: flex; align-items: center; gap: 12px; background: rgba(150, 150, 150, 0.08); border: 1px solid var(--card-border); padding: 12px 16px; border-radius: 12px; margin: 15px 0; cursor: pointer;
+        }
+        .captcha-box input[type="checkbox"] { width: 20px; height: 20px; accent-color: #ff2d55; cursor: pointer; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 6px; font-size: 14px; color: var(--subtext-color); }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 10px 14px; border-radius: 10px; background: rgba(150, 150, 150, 0.15); border: 1px solid var(--card-border); color: var(--text-color); outline: none;
+        }
+        .divider { text-align: center; margin: 15px 0; color: var(--subtext-color); font-size: 13px; }
+        video { width: 100%; border-radius: 12px; margin-top: 10px; outline: none; }
+    </style>
+</head>
+<body>
+
+    <div class="background-glow">
+        <div class="glow-1"></div>
+        <div class="glow-2"></div>
+    </div>
+
+    <!-- Üst Menü -->
+    <header>
+        <div class="logo" onclick="location.reload()">
+            <div class="logo-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                </svg>
+            </div>
+            <span>SoundWave</span>
+        </div>
+
+        <div class="search-container">
+            <input type="text" class="search-box" placeholder="Şarkı, yapay zeka parçası veya bilgisayar dosyası ara..." onkeyup="searchVideo()">
+        </div>
+
+        <div class="nav-buttons">
+            <button class="btn" onclick="toggleTheme()" id="themeBtn">☀️ Işık Modu</button>
+            
+            <div id="guestNav" style="display: flex; gap: 8px;">
+                <button class="btn" onclick="openModal('loginModal')">Giriş Yap</button>
+                <button class="btn btn-primary" onclick="openModal('registerModal')">Kayıt Ol</button>
+            </div>
+
+            <div id="userNav" class="user-profile">
+                <button class="btn btn-ai" onclick="openModal('aiModal')">🤖 AI Müzik Stüdyosu</button>
+                <button class="btn" onclick="openProfileModal()">👤 Profilim</button>
+                <button class="btn btn-live" onclick="openModal('startLiveModal')">🔴 Yayın Aç</button>
+                <button class="btn btn-primary" onclick="openModal('uploadModal')">📂 Dosyalarım / Yükle</button>
+                <button class="btn" onclick="logout()">Çıkış</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Kategoriler -->
+    <div class="categories-bar">
+        <div class="chip active" onclick="filterCategory('all', this)">Tümü</div>
+        <div class="chip" onclick="filterCategory('AI', this)">✨ Yapay Zeka Müzikleri</div>
+        <div class="chip" onclick="filterCategory('Local', this)">💻 Bilgisayar / Yerel Dosyalarım</div>
+        <div class="chip" onclick="filterCategory('live', this)">🔴 CANLI YAYINLAR</div>
+        <div class="chip" onclick="filterCategory('Pop', this)">Pop</div>
+        <div class="chip" onclick="filterCategory('Hip-Hop', this)">Hip-Hop / Rap</div>
+        <div class="chip" onclick="filterCategory('Lo-Fi', this)">Lo-Fi & Chill</div>
+    </div>
+
+    <main>
+        <h1 id="pageTitle">Öne Çıkan Şarkılar, AI & Yerel Dosyalar</h1>
+        <div class="video-grid" id="videoContainer"></div>
+    </main>
+
+    <!-- APPLE MUSIC STYLE PLAYER -->
+    <div class="apple-music-player">
+        <div class="apple-track-info">
+            <div class="apple-thumb" id="appleThumb" style="background-image: url('https://picsum.photos/200?random=10');"></div>
+            <div class="apple-details">
+                <h4 id="appleTitle">Parça Seçin</h4>
+                <p id="appleAuthor">SoundWave</p>
+            </div>
+        </div>
+
+        <div class="apple-controls">
+            <div class="apple-btn-group">
+                <button class="apple-icon-btn" onclick="prevTrack()">⏮</button>
+                <button class="apple-play-btn" id="applePlayBtn" onclick="togglePlay()">▶</button>
+                <button class="apple-icon-btn" onclick="nextTrack()">⏭</button>
+            </div>
+            <div class="apple-progress-wrapper">
+                <span class="apple-time" id="currentTime">0:00</span>
+                <input type="range" class="apple-slider" id="progressBar" value="0" min="0" max="100" oninput="seekTrack()">
+                <span class="apple-time" id="totalDuration">0:00</span>
+            </div>
+        </div>
+
+        <div class="apple-right-panel">
+            <span style="font-size: 14px; opacity: 0.7;">🔊</span>
+            <input type="range" class="apple-slider apple-volume-slider" id="volumeBar" min="0" max="1" step="0.05" value="0.8" oninput="changeVolume()">
+        </div>
+    </div>
+
+    <audio id="globalAudioPlayer" ontimeupdate="updateProgress()" onended="nextTrack()"></audio>
+
+    <!-- YAPAY ZEKA MÜZİK ÜRETME STÜDYOSU MODALI -->
+    <div class="modal" id="aiModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('aiModal')">&times;</span>
+            <h2 style="margin-bottom: 5px;">🤖 AI Müzik Stüdyosu</h2>
+            <p style="color: var(--subtext-color); font-size: 13px; margin-bottom: 15px;">Yapay zeka ile sözleri ve müziği ayarlanmış profesyonel bir parça üretin!</p>
+            
+            <form onsubmit="handleGenerateAIMusic(event)">
+                <div class="form-group">
+                    <label>Şarkı / Parça Adı</label>
+                    <input type="text" id="aiSongTitle" required placeholder="Örn: Neon Skyline">
+                </div>
+                <div class="form-group">
+                    <label>Müzik Tarzı & Vokal Türü</label>
+                    <select id="aiGenre">
+                        <option value="Lo-Fi">Lo-Fi / Chillhop (Sakin Vokaller & Akustik)</option>
+                        <option value="Synthwave">Synthwave (Retro Gece Sürüşü)</option>
+                        <option value="EDM">EDM / Club (Enerjik Drop & Synth)</option>
+                        <option value="Pop">Modern Pop (Akılda Kalıcı Nakarat)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Şarkı Sözleri veya Tema Promptu</label>
+                    <textarea id="aiPrompt" rows="3" placeholder="Örn: Gece yarısı yağmur altında yürürken çalacak melankolik synthesizer melodisi ve yumuşak vokal..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-ai" style="width: 100%; padding: 12px; font-size: 15px;">✨ Yapay Zeka ile Müzik & Söz Üret</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- KULLANICI PROFİLİ MODALI -->
+    <div class="modal" id="profileModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('profileModal')">&times;</span>
+            <h2>👤 Profilim & Parçalarım</h2>
+            <p style="color: var(--subtext-color); font-size: 14px; margin-top: 4px;">Hoş geldin, <strong id="profileModalUser" style="color: #ff2d55;">Kullanıcı</strong></p>
+            
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="btn btn-ai" style="flex: 1;" onclick="closeModal('profileModal'); openModal('aiModal');">🤖 AI Müzik Yap</button>
+                <button class="btn btn-primary" style="flex: 1;" onclick="closeModal('profileModal'); openModal('uploadModal');">📂 Dosya Yükle</button>
+            </div>
+
+            <h3 style="font-size: 16px; margin-top: 20px;">Paylaştığım / Yerel Parçalarım</h3>
+            <div class="my-songs-list" id="mySongsList"></div>
+        </div>
+    </div>
+
+    <!-- CANLI YAYIN MODALI -->
+    <div class="modal" id="liveModal">
+        <div class="modal-content modal-live-content">
+            <span class="close-btn" onclick="closeModal('liveModal')">&times;</span>
+            <div>
+                <h2 id="liveTitle">Canlı Yayın</h2>
+                <p id="liveAuthor" style="color: #ff2d55; font-size: 14px; margin-top: 4px;"></p>
+                <video id="livePlayer" controls autoplay style="width: 100%;">
+                    <source id="liveSource" src="" type="video/mp4">
+                </video>
+            </div>
+            <div class="live-chat-box">
+                <h4 style="margin-bottom: 10px;">💬 Canlı Sohbet</h4>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-msg"><span class="chat-user">Moderatör:</span> SoundWave Canlı Yayınına Hoş Geldiniz!</div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chatInput" placeholder="Mesaj yazın...">
+                    <button class="btn btn-primary" onclick="sendChatMessage()">Gönder</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CANLI YAYIN BAŞLAT MODALI -->
+    <div class="modal" id="startLiveModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('startLiveModal')">&times;</span>
+            <h2 style="margin-bottom: 15px;">🔴 Canlı Yayın Başlat</h2>
+            <form onsubmit="handleStartLive(event)">
+                <div class="form-group"><label>Yayın Başlığı</label><input type="text" id="liveStreamTitle" required></div>
+                <div class="form-group"><label>Yayın URL (MP4 Stream)</label><input type="url" id="liveStreamUrl" required></div>
+                <div class="form-group"><label>Kapak Görseli URL</label><input type="url" id="liveStreamImage" required></div>
+                <button type="submit" class="btn btn-live" style="width: 100%; padding: 10px;">Yayını Başlat</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- KAYIT OL MODALI -->
+    <div class="modal" id="registerModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('registerModal')">&times;</span>
+            <h2>SoundWave'e Katıl</h2>
+            <button class="btn-google" onclick="handleGoogleLogin()">Google ile Kaydol</button>
+            <div class="divider">veya e-posta ile</div>
+            <form onsubmit="handleRegister(event)">
+                <div class="form-group"><label>Kullanıcı Adı</label><input type="text" id="regUsername" required></div>
+                <div class="form-group"><label>Şifre</label><input type="password" id="regPassword" required></div>
+                <div class="captcha-box" onclick="document.getElementById('captchaCheck').click()">
+                    <input type="checkbox" id="captchaCheck" onclick="event.stopPropagation()">
+                    <label for="captchaCheck">🤖 Ben robot değilim</label>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px;">Hesap Oluştur</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- GİRİŞ YAP MODALI -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('loginModal')">&times;</span>
+            <h2>Giriş Yap</h2>
+            <button class="btn-google" onclick="handleGoogleLogin()">Google ile Giriş Yap</button>
+            <div class="divider">veya</div>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group"><label>Kullanıcı Adı</label><input type="text" id="loginUsername" required></div>
+                <div class="form-group"><label>Şifre</label><input type="password" id="loginPassword" required></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 10px;">Giriş Yap</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- DOSYALARIM / BİLGİSAYARDAN MÜZİK YÜKLEME MODALI -->
+    <div class="modal" id="uploadModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('uploadModal')">&times;</span>
+            <h2>📂 Bilgisayar veya Hard Diskten Müzik Yükle</h2>
+            <p style="color: var(--subtext-color); font-size: 13px; margin-bottom: 15px;">Sisteminizden veya harici diskten bir ses dosyası (.mp3, .wav) seçerek platforma ekleyin.</p>
+            
+            <form onsubmit="handleLocalFileUpload(event)">
+                <div class="form-group">
+                    <label>Şarkı / Parça Adı</label>
+                    <input type="text" id="localTitle" required placeholder="Örn: My Favorite Song">
+                </div>
+                <div class="form-group">
+                    <label>Müzik Türü / Kategori</label>
+                    <select id="localCategory">
+                        <option value="Local">💻 Bilgisayar / Yerel Dosya</option>
+                        <option value="Pop">Pop</option>
+                        <option value="Hip-Hop">Hip-Hop</option>
+                        <option value="Lo-Fi">Lo-Fi</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Bilgisayardan Müzik Dosyası Seç (.mp3, .wav)</label>
+                    <input type="file" id="localAudioFile" accept="audio/*" required style="padding: 8px;">
+                </div>
+                <div class="form-group">
+                    <label>Kapak Görseli URL (Opsiyonel)</label>
+                    <input type="url" id="localImage" placeholder="https://picsum.photos/400/250">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">Bilgisayardan Yükle & Kaydet</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT KODLARI -->
+    <script>
+        let currentUser = null;
+        let currentTrackIndex = 0;
+        let playlist = [];
+
+        const defaultVideos = [
+            { id: 1, title: '✨ AI Dreamscape (Yapay Zeka)', category: 'AI', isAI: true, author: 'SoundWave AI', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', image: 'https://picsum.photos/400/250?random=1' },
+            { id: 2, title: '🔴 Techno Club Stream LIVE', category: 'live', isLive: true, author: 'DJ Pulse', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4', image: 'https://picsum.photos/400/250?random=5' },
+            { id: 3, title: 'Midnight City Beats', category: 'Lo-Fi', isLive: false, author: 'ChillHop Station', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', image: 'https://picsum.photos/400/250?random=2' }
+        ];
+
+        window.onload = function() {
+            const savedUser = localStorage.getItem('soundwave_user');
+            if (savedUser) { currentUser = savedUser; updateNav(); }
+            renderVideos();
+        };
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+            const isLight = document.body.classList.contains('light-theme');
+            document.getElementById('themeBtn').innerText = isLight ? '🌙 Gece Modu' : '☀️ Işık Modu';
+        }
+
+        function renderVideos(filterCat = 'all') {
+            const container = document.getElementById('videoContainer');
+            container.innerHTML = '';
+            let customVideos = JSON.parse(localStorage.getItem('soundwave_videos')) || [];
+            playlist = [...customVideos, ...defaultVideos];
+
+            playlist.forEach((video, index) => {
+                if (filterCat === 'live' && !video.isLive) return;
+                if (filterCat === 'AI' && !video.isAI) return;
+                if (filterCat === 'Local' && video.category !== 'Local') return;
+                if (filterCat !== 'all' && filterCat !== 'live' && filterCat !== 'AI' && filterCat !== 'Local' && video.category !== filterCat) return;
+
+                const card = document.createElement('div');
+                card.className = 'video-card';
+                card.onclick = function() {
+                    if(video.isLive) openLiveStream(video);
+                    else playTrack(index);
+                };
+                
+                let badgeHTML = '';
+                if(video.isLive) badgeHTML = '<div class="live-badge">🔴 CANLI</div>';
+                else if(video.isAI) badgeHTML = '<div class="ai-badge">✨ AI MÜZİK</div>';
+                else if(video.category === 'Local') badgeHTML = '<div class="local-badge">💻 BİLGİSAYAR</div>';
+
+                card.innerHTML = `
+                    <div class="thumbnail" style="background-image: url('${video.image || 'https://picsum.photos/400/250'}');">
+                        ${badgeHTML}
+                        <div class="play-overlay">▶</div>
+                    </div>
+                    <div class="video-info">
+                        <div class="video-title">${video.title}</div>
+                        <div class="video-author">${video.author}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        /* BİLGİSAYAR / HARD DİSKTEN DOSYA YÜKLEME (File API) */
+        function handleLocalFileUpload(e) {
+            e.preventDefault();
+            if (!currentUser) {
+                alert('Müzik yüklemek için lütfen önce giriş yapın.');
+                openModal('loginModal');
+                return;
+            }
+
+            const title = document.getElementById('localTitle').value;
+            const category = document.getElementById('localCategory').value;
+            const fileInput = document.getElementById('localAudioFile');
+            const imageInput = document.getElementById('localImage').value;
+
+            if (fileInput.files && fileInput.files[0]) {
+                const file = fileInput.files[0];
+                const fileURL = URL.createObjectURL(file); // Bilgisayardaki yerel dosya URL'si
+
+                const newLocalTrack = {
+                    id: 'local_' + Date.now(),
+                    title: '💻 ' + title,
+                    category: category,
+                    isAI: false,
+                    isLive: false,
+                    url: fileURL,
+                    image: imageInput || 'https://picsum.photos/400/250?random=' + Math.floor(Math.random() * 100),
+                    author: currentUser + ' (Yerel Disk)'
+                };
+
+                let customVideos = JSON.parse(localStorage.getItem('soundwave_videos')) || [];
+                customVideos.unshift(newLocalTrack);
+                localStorage.setItem('soundwave_videos', JSON.stringify(customVideos));
+
+                renderVideos();
+                closeModal('uploadModal');
+                e.target.reset();
+                alert('Parçanız bilgisayarınızdan başarıyla yüklendi ve oynatıcıya eklendi!');
+            }
+        }
+
+        /* YAPAY ZEKA MÜZİK & VOKAL ÜRETME */
+        function handleGenerateAIMusic(e) {
+            e.preventDefault();
+            if (!currentUser) {
+                alert('Yapay zeka ile müzik üretmek için lütfen önce giriş yapın.');
+                openModal('loginModal');
+                return;
+            }
+
+            const title = document.getElementById('aiSongTitle').value;
+            const genre = document.getElementById('aiGenre').value;
+            const prompt = document.getElementById('aiPrompt').value;
+
+            const newAIMusic = {
+                id: 'ai_' + Date.now(),
+                title: '✨ ' + title + ' (' + genre + ')',
+                category: 'AI',
+                isAI: true,
+                isLive: false,
+                url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+                image: 'https://picsum.photos/400/250?random=' + Math.floor(Math.random() * 50),
+                author: currentUser + ' (AI Stüdyo)'
+            };
+
+            let customVideos = JSON.parse(localStorage.getItem('soundwave_videos')) || [];
+            customVideos.unshift(newAIMusic);
+            localStorage.setItem('soundwave_videos', JSON.stringify(customVideos));
+
+            renderVideos();
+            closeModal('aiModal');
+            e.target.reset();
+            alert('✨ Yapay zeka müziğiniz ve sözleri başarıyla oluşturuldu!');
+        }
+
+        /* APPLE MUSIC PLAYER KONTROLLERİ */
+        const audio = document.getElementById('globalAudioPlayer');
+
+        function playTrack(index) {
+            currentTrackIndex = index;
+            const track = playlist[index];
+            if (!track) return;
+
+            document.getElementById('appleTitle').innerText = track.title;
+            document.getElementById('appleAuthor').innerText = track.author;
+            document.getElementById('appleThumb').style.backgroundImage = `url('${track.image}')`;
+            audio.src = track.url;
+            audio.play();
+            document.getElementById('applePlayBtn').innerText = '⏸';
+        }
+
+        function togglePlay() {
+            if (!audio.src) { playTrack(0); return; }
+            if (audio.paused) {
+                audio.play();
+                document.getElementById('applePlayBtn').innerText = '⏸';
+            } else {
+                audio.pause();
+                document.getElementById('applePlayBtn').innerText = '▶';
+            }
+        }
+
+        function prevTrack() {
+            currentTrackIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
+            playTrack(currentTrackIndex);
+        }
+
+        function nextTrack() {
+            currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
+            playTrack(currentTrackIndex);
+        }
+
+        function updateProgress() {
+            if (audio.duration) {
+                const progress = (audio.currentTime / audio.duration) * 100;
+                document.getElementById('progressBar').value = progress;
+                document.getElementById('currentTime').innerText = formatTime(audio.currentTime);
+                document.getElementById('totalDuration').innerText = formatTime(audio.duration);
+            }
+        }
+
+        function seekTrack() {
+            const seekTo = (document.getElementById('progressBar').value / 100) * audio.duration;
+            audio.currentTime = seekTo;
+        }
+
+        function changeVolume() {
+            audio.volume = document.getElementById('volumeBar').value;
+        }
+
+        function formatTime(seconds) {
+            const min = Math.floor(seconds / 60);
+            const sec = Math.floor(seconds % 60);
+            return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+        }
+
+        /* KULLANICI PROFİLİ VE SİLME */
+        function openProfileModal() {
+            if(!currentUser) return;
+            document.getElementById('profileModalUser').innerText = currentUser;
+            const list = document.getElementById('mySongsList');
+            list.innerHTML = '';
+
+            let customVideos = JSON.parse(localStorage.getItem('soundwave_videos')) || [];
+            let myVideos = customVideos.filter(v => v.author.includes(currentUser));
+
+            if(myVideos.length === 0) {
+                list.innerHTML = '<p style="color: var(--subtext-color); font-size: 13px;">Henüz yüklediğiniz dosya veya AI parçası bulunmuyor.</p>';
+            } else {
+                myVideos.forEach(video => {
+                    list.innerHTML += `
+                        <div class="my-song-item">
+                            <div class="my-song-info">
+                                <div class="my-song-img" style="background-image: url('${video.image}');"></div>
+                                <div>
+                                    <div style="font-weight: 600; font-size: 14px;">${video.title}</div>
+                                    <div style="font-size: 12px; color: var(--subtext-color);">${video.category === 'Local' ? '💻 Yerel Dosya' : (video.isAI ? '✨ AI Parçası' : video.category)}</div>
+                                </div>
+                            </div>
+                            <button class="delete-btn" onclick="deleteMySong('${video.id}')">🗑️ Sil</button>
+                        </div>
+                    `;
+                });
+            }
+
+            openModal('profileModal');
+        }
+
+        function deleteMySong(id) {
+            let customVideos = JSON.parse(localStorage.getItem('soundwave_videos')) || [];
+            customVideos = customVideos.filter(v => String(v.id) !== String(id));
+            localStorage.setItem('soundwave_videos', JSON.stringify(customVideos));
+            openProfileModal();
+            renderVideos();
+        }
+
+        function openLiveStream(video) {
+            audio.pause();
+            document.getElementById('applePlayBtn').innerText = '▶';
+            document.getElementById('liveTitle').innerText = video.title;
+            document.getElementById('liveAuthor').innerText = "🔴 Yayınlayan: " + video.author;
+            document.getElementById('liveSource').src = video.url;
+            const player = document.getElementById('livePlayer');
+            player.load();
+            document.getElementById('liveModal').style.display = 'flex';
+            player.play();
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            if (!input.value.trim()) return;
+            const chatBox = document.getElementById('chatMessages');
+            const msg = document.createElement('div');
+            msg.className = 'chat-msg';
+            msg.innerHTML = `<span class="chat-user">${currentUser || 'Misafir'}:</span> ${input.value}`;
+            chatBox.appendChild(msg);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            input.value = '';
+        }
+
+        function handleStartLive(e) {
+            e.preventDefault();
+            const newLive = {
+                id: 'live_' + Date.now(),
+                title: '🔴 ' + document.getElementById('liveStreamTitle').value,
+                category: 'live', isLive: true,
+                url: document.getElementById('liveStreamUrl').value,
+                image: document.getElementById('liveStreamImage').value,
+                author: currentUser || 'Yayıncı'
+            };
+            let customVideos = JSON.parse(localStorage.getItem('soundwave_videos')) || [];
+            customVideos.unshift(newLive);
+            localStorage.setItem('soundwave_videos', JSON.stringify(customVideos));
+            renderVideos(); closeModal('startLiveModal'); e.target.reset();
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            if (!document.getElementById('captchaCheck').checked) {
+                alert('Lütfen "Ben robot değilim" kutusunu işaretleyin.');
+                return;
+            }
+            currentUser = document.getElementById('regUsername').value;
+            localStorage.setItem('soundwave_user', currentUser);
+            updateNav(); closeModal('registerModal');
+            alert('Kayıt başarılı!');
+        }
+
+        function handleGoogleLogin() {
+            currentUser = 'Google Kullanıcısı';
+            localStorage.setItem('soundwave_user', currentUser);
+            updateNav(); closeModal('registerModal'); closeModal('loginModal');
+        }
+
+        function filterCategory(cat, element) {
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            element.classList.add('active');
+            renderVideos(cat);
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+            if(id === 'liveModal') document.getElementById('livePlayer').pause();
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            currentUser = document.getElementById('loginUsername').value;
+            localStorage.setItem('soundwave_user', currentUser);
+            updateNav(); closeModal('loginModal');
+        }
+
+        function logout() { currentUser = null; localStorage.removeItem('soundwave_user'); updateNav(); }
+        function updateNav() {
+            document.getElementById('guestNav').style.display = currentUser ? 'none' : 'flex';
+            document.getElementById('userNav').style.display = currentUser ? 'flex' : 'none';
+            if(currentUser) document.getElementById('currentUserName').innerText = currentUser;
+        }
+
+        function searchVideo() {
+            let input = document.querySelector('.search-box').value.toLowerCase();
+            document.querySelectorAll('.video-card').forEach(card => {
+                let title = card.querySelector('.video-title').innerText.toLowerCase();
+                card.style.display = title.includes(input) ? "block" : "none";
+            });
+        }
+    </script>
+</body>
+</html>
